@@ -17,10 +17,10 @@ import seaborn as sns
 # ========================================
 # READ/EXTRACT RELEVANT DATA
 # ========================================
-with open("data/Kickstarter_2018-10-18T03_20_48_880Z/Kickstarter_2018-10-18T03_20_48_880Z.json",
-          encoding="utf8") as json_file:
+file = 'data/Kickstarter_2018-10-18T03_20_48_880Z/Kickstarter_2018-10-18T03_20_48_880Z.json'
+with open(file, encoding="utf8") as json_file:
     json_obj = [json.loads(line) for line in json_file]
-    
+
 # ---- QUICK EXPLORATION ----
 type(json_obj)
 len(json_obj)
@@ -29,8 +29,7 @@ len(json_obj[0])
 json_obj[len(json_obj)-1] # look at final entry
 json_obj[0].keys()
 
-# It looks like the key-value pair to keep is 'data'
-
+# ---- DATA EXTRACTION ----
 # Extract the 'data' key-value pairs
 json_obj2 = [] # pre-allocate
 # append 'data' dictionary only
@@ -39,14 +38,10 @@ for x in range(0, len(json_obj)):
     
 len(json_obj2) - len(json_obj) # Check that all rows extracted
 
-json_obj2[0]
-
-# ---- EXTRACT RELEVANT COLUMNS ----
+# =============================================================================
 # We can remove columns that we know or highly suspect will not help us
 # predict project status.
-json_obj2[0].keys()
-
-# =============================================================================
+#
 # Remove probably useless keys as well as nested-dictionary keys (to be added 
 # back later if desired): 
 #   - Useless: photo, slug, urls, source_url
@@ -64,23 +59,20 @@ json_obj3 = []
 for x in range(0, len(json_obj2)):
     json_obj3.append({k:json_obj2[x][k] for k in keys})
     
-# ==== ADD BACK USEFUL SUB-DICTIONARY VALUES ====
+# Add back useful sub-nested dictionary entries
 # Previously removed: 'creator', 'location', 'category', 'profile'
 
 # ---- Explore 'creator' ----
 # Grab useful previously removed sub key-value pairs:
 json_obj2[0]["creator"].keys()
-json_obj2[0]["creator"]
 
 # Useful keys are: 'is_registered'
 # Add 'is_registered' to json_obj3
 for x in range(0, len(json_obj3)):
     json_obj3[x]["creator_registered"] = json_obj2[x]["creator"]["is_registered"]
-json_obj3[0].get('creator_registered')
 
 # ---- Explore 'location' ----
 json_obj2[0]["location"].keys()
-json_obj2[0]["location"]
 
 # Useful keys: country, state
 for x in range(0, len(json_obj3)):
@@ -94,13 +86,9 @@ for x in range(0, len(json_obj3)):
         json_obj3[x]["loc_country"] = np.float64('nan')
         json_obj3[x]["loc_state"] = np.float64('nan')
 
-json_obj3[0].get('loc_country')
-json_obj3[0].get('loc_state')
-
 # ---- Explore 'category' ----
 # Grab useful previously removed sub key-value pairs:
 json_obj2[0]["category"].keys()
-json_obj2[0]["category"]
 
 # Useful keys: name, slug, position, parent_id
 # Check for null entries
@@ -110,37 +98,36 @@ for x in range(0, len(json_obj2)):
         x_category = x_category + 1
     else:
         break
-x_category - len(json_obj2)
-# There are no null entries
+x_category - len(json_obj2) # Null entries check
+ # 0 null entries
 
-json_obj2[0]["category"]
 x_name = 0
 for x in range(0, len(json_obj2)):
     if "name" in json_obj2[x]["category"]:
         x_name = x_name + 1
-x_name - len(json_obj2)
-# No null entries
+x_name - len(json_obj2) # Null entries check
+ # 0 null entries
 
 x_slug = 0
 for x in range(0, len(json_obj2)):
     if "slug" in json_obj2[x]["category"]:
         x_slug = x_slug + 1
-x_slug - len(json_obj2)
-# No null entries
+x_slug - len(json_obj2) # Null entries check
+ # 0 null entries
 
 x_position = 0
 for x in range(0, len(json_obj2)):
     if "position" in json_obj2[x]["category"]:
         x_position = x_position + 1
-x_position - len(json_obj2)
-# No null entries
+x_position - len(json_obj2) # Null entries check
+ # 0 null entries
 
 x_parent_id = 0
 for x in range(0, len(json_obj2)):
     if "parent_id" in json_obj2[x]["category"]:
         x_parent_id = x_parent_id + 1
 x_parent_id - len(json_obj2)
-# parent_id has 17378 null entries
+# 17378 null entries
 
 # Add columns
 for x in range(0, len(json_obj3)):
@@ -157,8 +144,6 @@ for x in range(0, len(json_obj3)):
 # ---- Explore 'profile' ----
 # Grab useful previously removed sub key-value pairs:
 json_obj2[0]["profile"].keys()
-json_obj2[56037]["profile"]
-json_obj2[4]["profile"]["state"]
 
 # check to see how many profile states are 'inactive'
 x_inactive = 0
@@ -174,6 +159,7 @@ for x in range(0, len(json_obj2)):
         x_active += 1
 x_active
 
+# Check that 'active' and 'inactive' are the only two possible profile states
 len(json_obj2) - x_active - x_inactive
 
 # =============================================================================
@@ -187,8 +173,6 @@ len(json_obj2) - x_active - x_inactive
 # =============================================================================
 
 # ---- CONVERT TO DATA FRAME ----
-json_obj3[0]
-len(json_obj3)
 
 # Create initial (dirty) dataframe (for future reference)
 df00 = pd.DataFrame.from_records(json_obj3)
@@ -219,8 +203,6 @@ df = df[['id', 'name', 'blurb', 'category_name', 'category_slug', 'category_posi
          'usd_pledged', 'converted_pledged_amount', 'fx_rate', 'current_currency', 'usd_type', 'spotlight', 
          'creator_registered', 'state']]
 
-len(df.columns)
-
 # ---- REMOVE DUPLICATES ----
 df.sort_values(by=["backers_count"],ascending=False)[["id","name","backers_count"]]
 df.shape
@@ -234,6 +216,7 @@ len(df["id"].unique()) - len(df)
 
 # Explore the duplicate ID rows
 dupes = pd.concat(g for _, g in df.groupby("id") if len(g) > 1)
+dupes
 
 # =============================================================================
 # It looks like some of the rows look different due to usd_pledged, 
@@ -337,7 +320,6 @@ df.info()
 # delete columns
 df.drop(columns=['blurb','loc_state','country','currency',
                  'currency_trailing_code','state_changed_at'], inplace=True)
-len(df.columns)
 
 # Rename columns
 df.rename(columns={'category_name':'sub_category', 'category_slug':'category', 
@@ -345,17 +327,13 @@ df.rename(columns={'category_name':'sub_category', 'category_slug':'category',
                    'category_parent_id':'category_id', 'loc_country':'country', 
                    'state':'launch_state'}, inplace=True)
 
-df.columns
-
 # Re-arrange columns
 df = df[['id', 'name', 'sub_category_id', 'sub_category', 'category_id', 
          'category', 'goal', 'backers_count', 'pledged', 'disable_communication', 
          'country','deadline', 'created_at', 'launched_at', 'staff_pick', 
          'spotlight', 'creator_registered', 'launch_state']]
 
-df.columns
-
-# there does not seem to be a strong correlation between sub_category_id and 
+# There does not seem to be a strong correlation between sub_category_id and 
 # sub_category. Let's drop the sub_category_id and (maybe) keep sub_category
 df.sort_values('sub_category').sub_category.unique()
 df.sort_values('category').category.unique()
@@ -381,12 +359,8 @@ df.sort_values('category').category.unique()
 # =============================================================================
 
 df.drop(columns=['sub_category_id','sub_category','category_id'], inplace=True)
-len(df.columns)
 
 # Now let's extract the primary category from the category column
-df.category[24:28]
-[i.split('/')[0] for i in df.category][24:28]
-
 df.category = [i.split('/')[0] for i in df.category]
 df.sort_values(by='category').category.unique() # Check
 
@@ -414,7 +388,7 @@ df00[df00['id'].isin(null_country_IDs)].sort_values(by='id').drop_duplicates('id
 
 df['country'].fillna('US', inplace=True)
 
-sum(df.isnull().sum(axis=0))
+df.isnull().sum(axis=0)
 # No more null values in the data frame
 
 # ---- FURTHER CLEAN UP OF 'launch_state' ----
@@ -432,7 +406,9 @@ sns.countplot(x='launch_state',data=df)
 
 df.query("launch_state == 'failed' | launch_state == 'successful'", inplace=True)
 df.reset_index(drop=True, inplace=True)
-df['launch_state'].unique()
+
+sns.set_style('whitegrid')
+sns.countplot(x='launch_state',data=df)
 
 # ========================================
 # SAVE CSV

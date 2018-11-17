@@ -13,7 +13,7 @@ is assumed that this data is accurate and no attempt was made to verify the web 
 **Note: from April 2015 we noticed that Kickstarter started limiting how many projects user can view in a single category. This limits 
 the amount of historic projects we can get in a single scrape run. But recent and active projects are always included.**
 
-*No attempt was made for this prject to ensure we have the entirety of the project history.*
+*No attempt was made for this project to ensure we have the entirety of the project history.*
 
 **Note: from December 2015 we modified the collection approach to go through all sub-categories instead of only top level categories. This 
 yields more results in the datasets, but possible duplication where projects are listed in multiple categories. Also from December 2015 
