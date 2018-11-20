@@ -285,11 +285,13 @@ df.reset_index(drop=True, inplace=True)
 
 df.info()
 
-# =============================================================================
 # ---- FURTHER REFINE VARIABLES ----
+
+# =============================================================================
 # NOTES:
 # delete:
 # * blurb
+# * name
 # * loc_state (too granular)
 # * country (not sure how it differs from loc_country; largely redundant)
 # * currency (pledges is in usd)
@@ -298,7 +300,6 @@ df.info()
 # 
 # KEEP:
 # * id (primary key)
-# * name (for reference)
 # * category_name; change to "sub_category"
 # * category slug; extract first word, change to "category"
 # * category_position; change to "sub_category_id", move before sub_category
@@ -318,7 +319,7 @@ df.info()
 # =============================================================================
 
 # delete columns
-df.drop(columns=['blurb','loc_state','country','currency',
+df.drop(columns=['name','blurb','loc_state','country','currency',
                  'currency_trailing_code','state_changed_at'], inplace=True)
 
 # Rename columns
@@ -328,7 +329,7 @@ df.rename(columns={'category_name':'sub_category', 'category_slug':'category',
                    'state':'launch_state'}, inplace=True)
 
 # Re-arrange columns
-df = df[['id', 'name', 'sub_category_id', 'sub_category', 'category_id', 
+df = df[['id', 'sub_category_id', 'sub_category', 'category_id', 
          'category', 'goal', 'backers_count', 'pledged', 'disable_communication', 
          'country','deadline', 'created_at', 'launched_at', 'staff_pick', 
          'spotlight', 'creator_registered', 'launch_state']]
@@ -391,7 +392,7 @@ df['country'].fillna('US', inplace=True)
 df.isnull().sum(axis=0)
 # No more null values in the data frame
 
-# ---- FURTHER CLEAN UP OF 'launch_state' ----
+# Further cleanup of 'launch_state'
 df['launch_state'].unique()
 # There are five launch states: failed, successful, canceled, live, and suspended
 sns.set_style('whitegrid')
@@ -409,6 +410,103 @@ df.reset_index(drop=True, inplace=True)
 
 sns.set_style('whitegrid')
 sns.countplot(x='launch_state',data=df)
+
+# Look into little-known variables
+df['disable_communication'].unique()
+df['staff_pick'].unique()
+df['spotlight'].unique()
+df['creator_registered'].unique()
+# disable_communications and creator_registered are all the same - delete
+df.drop(columns=['disable_communication', 'creator_registered'], inplace=True)
+
+# ---- CONVERT CATEGORICAL VARIABLES TO DUMMY VARIABLES ----
+category = pd.get_dummies(df['category'], drop_first=True)
+country = pd.get_dummies(df['country'], drop_first=True)
+d_launch_state = dict(zip(['failed','successful'], range(0,2)))
+launch_state = df['launch_state'].map(d_launch_state)
+df[df['launch_state'] == 'successful'].shape[0] - launch_state.sum() # Check mapping
+
+# Drop the categorical launch_state column (keep 'category' and 'country' for 
+# visualization)
+df.drop(['launch_state'],axis=1,inplace=True)
+
+# Add the new dummy variable launch_state column and move it to column index 1 
+# and country to column index 3
+df = pd.concat([launch_state, df], axis=1)
+df = df[['id', 'launch_state', 'category', 'country', 'goal', 'backers_count', 
+         'pledged','deadline', 'created_at', 'launched_at', 'staff_pick', 
+         'spotlight']]
+
+# Add the dummy variable country and category columns
+df = pd.concat([df, category, country], axis=1)
+
+df.isnull().sum().sum() # Check for nulls
+df.isna().sum().sum() # Check for nulls
+df.shape
+df.info()
+
+# =============================================================================
+# Now we need to consider what exactly some of those columns mean:
+# * id - still just a primary key
+# * pledged - somewhat useless except as a comparison to the goal. Drop pledged
+#   but add a pledged_ratio column (pledged/goal)
+# * goal - keep for now but we might drop later due to the potentially high 
+#   variance with pledged
+# * deadline - useless except in comparison to launched_at. Drop deadline but 
+#   add funding_days.
+# * created_at - useless; launched_at is more applicable.
+# * launched_at - keep to maybe create some time series plots; move before 
+#   funding_days
+# * staff_pick - not exactly sure but convert to 0 (false) and 1 (true)
+# * spotlight - not exactly sure but covert to 0 (false) and 1 (true)
+# =============================================================================
+
+# pledged_ratio
+pledged_ratio = df['pledged'] / df['goal']
+df.insert(loc=df.columns.get_loc("pledged"), column='pledged_ratio', 
+          value=pledged_ratio)
+df.drop(columns='pledged', inplace=True)
+
+# datetime columns
+funding_days = (df['deadline'] - df['launched_at']).dt.days
+df.insert(loc=df.columns.get_loc("deadline"), column='funding_days', 
+          value=funding_days)
+df.drop(columns='deadline', inplace=True)
+
+df.drop(columns='created_at', inplace=True)
+
+launched_at = df['launched_at']
+df.drop(columns='launched_at', inplace=True)
+df.insert(loc=2, column='launched_at', value=launched_at)
+
+df.info()
+
+# staff_pick and spotlight
+d_staff_pick = dict(zip([False,True], range(0,2)))
+staff_pick = df['staff_pick'].map(d_staff_pick)
+df[df['staff_pick'] == True].shape[0] - staff_pick.sum() # check mapping
+
+d_spotlight = dict(zip([False,True], range(0,2)))
+spotlight = df['spotlight'].map(d_spotlight)
+df[df['spotlight'] == True].shape[0] - spotlight.sum() # check mapping
+
+df.drop(['staff_pick','spotlight'],axis=1,inplace=True)
+
+df.insert(loc=df.columns.get_loc("comics"), column='staff_pick', value=staff_pick)
+df.insert(loc=df.columns.get_loc("comics"), column='spotlight', value=spotlight)
+
+df.isnull().sum().sum()
+df.isna().sum().sum()
+
+# ========================================
+# VARIABLE REDUCTION
+# ========================================
+# Variable-variable correlation data 
+df.drop(df.columns[11:], axis=1).drop(columns=['id','launch_state',
+       'launched_at','category','country']).corr()
+
+sns.heatmap(df.drop(df.columns[11:], axis=1).drop(columns=['id', 'launch_state',
+            'launched_at', 'category', 'country']).corr(), cmap='coolwarm', annot=True)
 
 # ========================================
 # SAVE CSV
