@@ -9,42 +9,39 @@ Created on Thu Nov 15 14:43:36 2018
 # IMPORT LIBRARIES
 # ========================================
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # ========================================
 # IMPORT DATAFRAME
 # ========================================
-df00 = pd.read_csv('data/df00.csv', sep=',', index_col=0)
+df00 = pd.read_csv('data/df00.csv', sep=',', index_col=0) # Original dirty df
 df00.shape
 
-df = pd.read_csv('data/df01.csv', sep=',', na_filter=False, index_col=0, 
-                 parse_dates=['deadline','created_at','launched_at'])
+df = pd.read_csv('data/df02.csv', sep=',', na_filter=False, index_col=0, 
+                 parse_dates=['launched_at'])
 
 df.shape
 df.info()
-df.isnull().sum(axis=0)
-df.isna().sum(axis=0)
+df.isnull().sum().sum()
+df.isna().sum().sum()
 
 # ========================================
 # EXPLORATORY DATA ANALYSIS
 # ========================================
-%matplotlib inline
-fig=plt.figure(figsize=(8, 4))
+
+# ---- EXPLORE launch_state ----
+fig=plt.figure(figsize=(8,4))
 sns.set_style('whitegrid')
-sns.countplot(x='launch_state',data=df)
+sns.countplot(x='launch_state', data=df, palette='viridis')
 
-# Calculate success and failue rates
-df00 = pd.read_csv('data/df00.csv')
-num_total_projects = df00['id'].unique().shape[0]
-num_successful_launches = df[df['launch_state'] == 'successful'].values.shape[0]
-num_failed_launches = df[df['launch_state'] == 'failed'].values.shape[0]
-
-success_rate = (num_successful_launches / num_total_projects) * 100
-success_rate # 53.2%
-
-failure_rate = (num_failed_launches / num_total_projects) * 100
-failure_rate # 39.8%
+successes = df[df['launch_state'] == 1].values.shape[0]
+failures = df[df['launch_state'] == 0].values.shape[0]
+total_projects = df00['id'].unique().shape[0]
+success_rate = successes / total_projects * 100 # 53.2%
+failure_rate = failures / total_projects * 100 # 39.8%
+print('The total success rate is: ', round(success_rate, 1), '%','\n',
+      'The total failure rate is: ', round(failure_rate, 1), '%', sep='')
 
 # =============================================================================
 # It looks like a huge portion of projects ultimately fail to launch! We will
@@ -57,108 +54,147 @@ failure_rate # 39.8%
 #    funded."
 # =============================================================================
 
-# ---- FURTHER CLEAN-UP ----
-df.columns
-df['disable_communication'].unique()
-# all values are False; delete it
-df['staff_pick'].unique()
-df['spotlight'].unique()
-df['creator_registered'].unique()
-# all values are True; delete it
-# Also drop 'name' since it's not useful
-
-df.drop(columns=['name', 'disable_communication', 'creator_registered'], 
-        inplace=True)
-
-# ---- DUMMY VARIABLES ----
-# Convert the categorical variables to dummy variables
-df.info()
-category = pd.get_dummies(df['category'], drop_first=True)
-country = pd.get_dummies(df['country'], drop_first=True)
-d_launch_state = dict(zip(['failed','successful'], range(0,2)))
-launch_state = df['launch_state'].map(d_launch_state)
-
-# Check that launch state got convertec correctly
-df[df['launch_state'] == 'successful'].shape[0] - launch_state.sum()
-
-# Drop the categorical launch_state column (keep 'category' and 'country' for
-# visualization purposes)
-df.drop(['launch_state'],axis=1,inplace=True)
-
-# Add the new dummy variable launch_state column and move it to column index 1 
-# and country to column index 3
-df = pd.concat([launch_state, df], axis=1)
-df = df[['id', 'launch_state', 'category', 'country', 'goal', 'backers_count',
-         'pledged', 'deadline', 'created_at', 'launched_at', 'staff_pick', 
-         'spotlight']]
-
-# Add the dummy variable country and category variables
-df = pd.concat([df, category, country], axis=1)
-df.shape
-df.info()
-df.isnull().sum().sum() # Check for nulls
-
-# =============================================================================
-# Now we need to consider what exactly some of those columns mean:
-# * id - primary key
-# * pledged - somewhat useless except as a comparison to the goal. Drop 'pledged'
-#   but add a 'pledged_ratio' column (pledged/goal)
-# * deadline - useless except in comparison to launched_at. Drop deadline but 
-#   add funding_days.
-# * created_at - useless; launched_at is more applicable.
-# * launched_at - keep to maybe create some time series plots.
-# * staff_pick - not exactly sure but convert to 0 (false) and 1 (true)
-# * spotlight - not exactly sure but covert to 0 (false) and 1 (true)
-# =============================================================================
-
-pledged_ratio = df['pledged'] / df['goal']
-df.insert(loc=df.columns.get_loc("pledged"), column='pledged_ratio', 
-          value=pledged_ratio)
-df.drop(columns='pledged', inplace=True)
-df.shape
-df.columns
-
-funding_days = (df['deadline'] - df['launched_at']).dt.days
-df.insert(loc=df.columns.get_loc("deadline"), column='funding_days', 
-          value=funding_days)
-df.drop(columns='deadline', inplace=True)
-df.drop(columns='created_at', inplace=True)
-df.shape
-df.columns
-
-launched_at = df['launched_at']
-df.drop(columns='launched_at', inplace=True)
-df.insert(loc=2, column='launched_at', value=launched_at)
-
-d_staff_pick = dict(zip([False,True], range(0,2)))
-staff_pick = df['staff_pick'].map(d_staff_pick)
-df[df['staff_pick'] == True].shape[0] - staff_pick.sum() # Check mapping
-
-d_spotlight = dict(zip([False,True], range(0,2)))
-spotlight = df['spotlight'].map(d_spotlight)
-df[df['spotlight'] == True].shape[0] - spotlight.sum() # Check mapping
-
-df.drop(['staff_pick','spotlight'],axis=1,inplace=True)
-df.insert(loc=df.columns.get_loc("comics"), column='staff_pick', value=staff_pick)
-df.insert(loc=df.columns.get_loc("comics"), column='spotlight', value=spotlight)
-
-df['staff_pick'].unique() # Unique check
-df['spotlight'].unique() # Unique check
-df.isnull().sum().sum() # Null value check
-df.isna().sum().sum() # NA value check
-
-# ---- EXPLORE ----
-
-# Pairplot of everything except for the dummy variables country and category
+# ---- DUMMY VARIABLE PAIRPLOT ----
 sns.set_style('whitegrid')
-sns.pairplot(data=df.drop(df.columns[11:], axis=1).drop(
-        columns=['id','launched_at','category','country']), diag_kind='kde', 
-        hue='launch_state')
+sns.pairplot(data=df.drop(df.columns[10:], axis=1).drop(
+        columns=['id','launched_at','category','country']), 
+             diag_kind='kde', hue='launch_state', palette='viridis')
+# Observation: little insight to be gained here
 
-df.columns.values
+# ---- FUNDING_DAYS VS GOAL ----
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "funding_days", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
 
-# ========================================
-# LOAD/SAVE CSV
-# ========================================
-df.to_csv('data/df02.csv', sep=",")
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "funding_days", data=df, hue='launch_state', size=12,palette='viridis'
+           fit_reg=False, scatter_kws={'alpha':0.5, 's':500}).set(xlim=(0,250000))
+
+# =============================================================================
+# Observations: 
+#  * Successful launches seem loosely clustered around funding_days = [0,60]
+#    and goal < $100k
+# =============================================================================
+
+# ---- BACKERS_COUNT VS GOAL ----
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "backers_count", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
+
+
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "backers_count", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
+    xlim=(0,250000), ylim=(0,15000))
+
+# =============================================================================
+# Observations: backers_count is not a good predictor; it's obvious that
+# with a high number of backers the project is more likely to succeed. More
+# important for this project, though, is the fact that it cannot be used a priori.
+# =============================================================================
+
+# ---- PLEDGED_RATIO vs GOAL ----
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "pledged_ratio", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
+
+
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "pledged_ratio", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
+    xlim=(0,250000), ylim=(0,2))
+
+# =============================================================================
+# Observations: As expected, pledged_ratio < 1 means failure and all
+# pledged_ratio >= 1 means success
+# =============================================================================
+
+# ---- STAFF_PICK vs GOAL ----
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "staff_pick", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
+
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "staff_pick", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
+    xlim=(0,250000))
+
+# =============================================================================
+# Observations: Staff_pick seems to be a decent indicator in launch_state
+# =============================================================================
+
+# ---- EXPLORE STAFF_PICK AND LAUNCH_STATE
+df_staff_picks = df[['launch_state','staff_pick']].groupby(
+        ['staff_pick'], as_index=False).count()
+df_staff_picks.columns = ['staff_pick','freq']
+df_staff_picks['ratio'] = df[['launch_state','staff_pick']].groupby(
+        ['staff_pick'], as_index=False).mean()['launch_state']
+df_staff_picks
+df_staff_picks['freq'] / df_staff_picks['freq'].sum()
+
+sns.set_style('whitegrid')
+sns.barplot(data = df[['launch_state','staff_pick']].groupby(
+        ['staff_pick'], as_index=False).mean(), x='staff_pick', y='launch_state')
+
+# =============================================================================
+# Observations: 
+#   * 13.4% of projects are chosen as staff picks
+#   * staff_pick seems to correlate with launch_state:
+#     - 52.3% of projects not chosen as staff picks succeed
+#     - 88.9% of projects chosen as staff picks succeed 
+#
+# From https://www.kickstarter.com/blog/how-to-get-featured-on-kickstarter,
+# it appears as if projects are featured when they catch the eye of the
+# Kickstarter staff via creativity, a nice and visually appealing site, etc. 
+# ie, they are NOT just picked due to them being funded well.
+# =============================================================================
+
+# =============================================================================
+# So what have we learned so far?
+# * goal - use it
+# * backers_count - do not use it (it's not known beforehand)
+# * pledged_ratio - do not use it (it's just an indicator of success)
+# * funding_days - use it
+# * staff_pick - use it
+# =============================================================================
+
+# ---- VISUALIZE CATEGORIES ----
+df_categories = df[['launch_state','category']].groupby(
+        ["category"]).describe().reset_index()
+df_categories.sort_values(by=[('launch_state','mean')], ascending=False)
+
+# Frequency plot
+sns.set_style('whitegrid')
+sns.factorplot(x='category', data=df, kind='count', size=10)
+
+# Success ratio plot
+sns.set_style('whitegrid')
+sns.barplot(x='category',y='launch_state',data=df)
+
+# Observations: clearly, some categories are more successful than others.
+
+# Heatmap
+# Note that I fill in empty cells with 0.5 so as not to bias towards
+# 0 (failure) and 1 (success)
+sns.set_style('whitegrid')
+ax = sns.heatmap(df.pivot_table(values='launch_state', columns='category', 
+                                index='funding_days', fill_value=0.5),
+                xticklabels=True)
+ax.invert_yaxis()
+plt.title('Heatmap, launch_state - category vs funding_days')
+
+# Clustermap
+sns.set_style('whitegrid')
+sns.clustermap(df.pivot_table(values='launch_state', columns='category', 
+                              index='funding_days', fill_value=0.5),
+                xticklabels=True)
+plt.title('Clustermap, launch_state - category vs funding_days')
 
