@@ -124,8 +124,8 @@ sns.lmplot("goal", "staff_pick", data=df, hue='launch_state', size=12,
 sns.set_style('whitegrid')
 sns.set(font_scale=3)
 sns.lmplot("goal", "staff_pick", data=df, hue='launch_state', size=12,
-           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
-    xlim=(0,250000))
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500},
+           palette='viridis').set(xlim=(0,250000))
 
 # =============================================================================
 # Observations: Staff_pick seems to be a decent indicator in launch_state
@@ -140,6 +140,7 @@ df_staff_picks['ratio'] = df[['launch_state','staff_pick']].groupby(
 df_staff_picks
 df_staff_picks['freq'] / df_staff_picks['freq'].sum()
 
+plt.figure()
 sns.set_style('whitegrid')
 sns.barplot(data = df[['launch_state','staff_pick']].groupby(
         ['staff_pick'], as_index=False).mean(), x='staff_pick', y='launch_state')
@@ -176,6 +177,7 @@ sns.set_style('whitegrid')
 sns.factorplot(x='category', data=df, kind='count', size=10)
 
 # Success ratio plot
+plt.figure()
 sns.set_style('whitegrid')
 sns.barplot(x='category',y='launch_state',data=df)
 
@@ -184,6 +186,7 @@ sns.barplot(x='category',y='launch_state',data=df)
 # Heatmap
 # Note that I fill in empty cells with 0.5 so as not to bias towards
 # 0 (failure) and 1 (success)
+plt.figure()
 sns.set_style('whitegrid')
 ax = sns.heatmap(df.pivot_table(values='launch_state', columns='category', 
                                 index='funding_days', fill_value=0.5),
