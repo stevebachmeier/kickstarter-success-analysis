@@ -13,7 +13,7 @@ import numpy as np
 import json
 from datetime import datetime
 import seaborn as sns
-
+from sklearn.model_selection import train_test_split
 # ========================================
 # READ/EXTRACT RELEVANT DATA
 # ========================================
@@ -99,36 +99,30 @@ for x in range(0, len(json_obj2)):
     else:
         break
 x_category - len(json_obj2) # Null entries check
- # 0 null entries
 
 x_name = 0
 for x in range(0, len(json_obj2)):
     if "name" in json_obj2[x]["category"]:
         x_name = x_name + 1
 x_name - len(json_obj2) # Null entries check
- # 0 null entries
 
 x_slug = 0
 for x in range(0, len(json_obj2)):
     if "slug" in json_obj2[x]["category"]:
         x_slug = x_slug + 1
 x_slug - len(json_obj2) # Null entries check
- # 0 null entries
 
 x_position = 0
 for x in range(0, len(json_obj2)):
     if "position" in json_obj2[x]["category"]:
         x_position = x_position + 1
 x_position - len(json_obj2) # Null entries check
- # 0 null entries
 
 x_parent_id = 0
 for x in range(0, len(json_obj2)):
     if "parent_id" in json_obj2[x]["category"]:
         x_parent_id = x_parent_id + 1
 x_parent_id - len(json_obj2)
-# 17378 null entries
-
 # Add columns
 for x in range(0, len(json_obj3)):
     # Extract name, slug, position, and parent_id data
@@ -174,14 +168,24 @@ len(json_obj2) - x_active - x_inactive
 
 # ---- CONVERT TO DATA FRAME ----
 
-# Create initial (dirty) dataframe (for future reference)
+# Create initial (raw/dirty) dataframe (for future reference)
 df00 = pd.DataFrame.from_records(json_obj3)
 df00.to_csv("data/df00.csv", sep=",") # Write out to csv
 
+# ========================================
+# WORKING/VALIDATION SPLIT
+# ========================================
+X,X_v,y,y_v = train_test_split(
+        df00.drop(columns=['state']), df00['state'], test_size=0.2, random_state=101)
+
+# Write out validation sets
+X_v.to_csv('data/X_v.csv', sep=",")
+y_v.to_csv('data/y_v.csv', sep=",")
+
 # Create working dataframe
-df = pd.DataFrame.from_records(json_obj3)
-df.head()
-df.tail()
+df = pd.concat([y,X], axis=1).reset_index(drop=True)
+
+df.shape
 df.describe()
 df.info()
 # Note that most of the data frame is already non-null
@@ -191,32 +195,23 @@ df.info()
 # ========================================
 
 # ---- REARRANGE COLUMNS ----
-df.columns
-
 # Check the original column arrangement
 json_obj3[0].keys()
 
 # Re-order columns
-df = df[['id', 'name', 'blurb', 'category_name', 'category_slug', 'category_position', 'category_parent_id', 'goal', 'pledged', 
+df = df[['state', 'id', 'name', 'blurb', 'category_name', 'category_slug', 'category_position', 'category_parent_id', 'goal', 'pledged', 
          'disable_communication', 'loc_country', 'loc_state', 'country', 'currency', 'currency_symbol', 'currency_trailing_code', 'deadline', 
          'state_changed_at', 'created_at', 'launched_at', 'staff_pick', 'is_starrable', 'backers_count', 'static_usd_rate', 
          'usd_pledged', 'converted_pledged_amount', 'fx_rate', 'current_currency', 'usd_type', 'spotlight', 
-         'creator_registered', 'state']]
+         'creator_registered']]
 
 # ---- REMOVE DUPLICATES ----
 df.sort_values(by=["backers_count"],ascending=False)[["id","name","backers_count"]]
-df.shape
 df.drop_duplicates(inplace=True)
-df.shape
-# We dropped 205696-189240=16456 duplicate rows
-
-# Search for more duplicates (based on id)
-len(df["id"].unique()) - len(df)
-# We still have 2166 duplicates
+print('Duplicate count: ', len(df) - len(df["id"].unique()))
 
 # Explore the duplicate ID rows
-dupes = pd.concat(g for _, g in df.groupby("id") if len(g) > 1)
-dupes
+#dupes = pd.concat(g for _, g in df.groupby("id") if len(g) > 1)
 
 # =============================================================================
 # It looks like some of the rows look different due to usd_pledged, 
@@ -228,42 +223,19 @@ dupes
 
 df.drop(columns=['currency_symbol','static_usd_rate','converted_pledged_amount','fx_rate','current_currency','usd_type'], 
         inplace=True)
-df.shape
-
 df.drop_duplicates(inplace=True)
-df.shape
-# We dropped 189240-187367=1873 duplicate rows
 
-# Search for more duplicates
-len(df["id"].unique()) - len(df)
-# There are still 293 duplicate IDs
-# It looks like there are differences with pledged, backers_count and usd_pledged
+print('Duplicate count: ',len(df) - len(df["id"].unique()))
 
 # usd_pledged is redundant with pledged; remove usd_pledged
 df.drop(columns=['usd_pledged'], inplace=True)
-
-df.shape
-
 df.drop_duplicates(inplace=True)
-
-df.shape
-
-# we dropped 187367-187345=22 duplicate rows
-
-# Search for more duplicates
-len(df["id"].unique()) - len(df)
-# There are 271 duplicate ID rows
+print('Duplicate count: ', len(df) - len(df["id"].unique()))
 
 # is_starrable is unclear what it is; drop it
 df.drop(columns=['is_starrable'], inplace=True)
-
-df.shape
 df.drop_duplicates(inplace=True)
-df.shape
-# We dropped a whopping one row.
-
-# Search for more duplicates
-len(df["id"].unique()) - len(df)
+print('Duplicate count: ', len(df) - len(df["id"].unique()))
 
 # =============================================================================
 # With 270 duplicate ID rows left and out of things I'd like to drop, I'm 
@@ -275,14 +247,12 @@ len(df["id"].unique()) - len(df)
 # =============================================================================
 
 df = df.sort_values('pledged', ascending=False).drop_duplicates('id').sort_index()
-
-# Search for more duplicates
-len(df["id"].unique()) - len(df)
+print('Duplicate count: ', len(df) - len(df["id"].unique()))
 # No more duplicates
 
 # Re-index
 df.reset_index(drop=True, inplace=True)
-
+df.shape
 df.info()
 
 # ---- FURTHER REFINE VARIABLES ----
@@ -299,6 +269,7 @@ df.info()
 # * state_changed_at
 # 
 # KEEP:
+# * state
 # * id (primary key)
 # * category_name; change to "sub_category"
 # * category slug; extract first word, change to "category"
@@ -315,7 +286,6 @@ df.info()
 # * backers_count; move before pledged
 # * spotlight (but what is it?)
 # * creator_registered
-# * state
 # =============================================================================
 
 # delete columns
@@ -329,10 +299,10 @@ df.rename(columns={'category_name':'sub_category', 'category_slug':'category',
                    'state':'launch_state'}, inplace=True)
 
 # Re-arrange columns
-df = df[['id', 'sub_category_id', 'sub_category', 'category_id', 
+df = df[['launch_state', 'id', 'sub_category_id', 'sub_category', 'category_id', 
          'category', 'goal', 'backers_count', 'pledged', 'disable_communication', 
          'country','deadline', 'created_at', 'launched_at', 'staff_pick', 
-         'spotlight', 'creator_registered', 'launch_state']]
+         'spotlight', 'creator_registered']]
 
 # There does not seem to be a strong correlation between sub_category_id and 
 # sub_category. Let's drop the sub_category_id and (maybe) keep sub_category
@@ -377,8 +347,7 @@ df.info()
 # ---- NA IMPUTATION ----
 sns.heatmap(df.isnull(),yticklabels=False,cbar=False,cmap='viridis')
 
-df.isnull().sum(axis=0)
-# the only null values are the 876 in the 'country' column
+df.isnull().sum()
 
 # Retrieve list of project IDs that have country=NaN
 null_country_IDs = df[df["country"].isnull().values]["id"].values
@@ -389,7 +358,8 @@ df00[df00['id'].isin(null_country_IDs)].sort_values(by='id').drop_duplicates('id
 
 df['country'].fillna('US', inplace=True)
 
-df.isnull().sum(axis=0)
+df.isnull().sum().sum()
+df.isna().sum().sum()
 # No more null values in the data frame
 
 # Further cleanup of 'launch_state'
@@ -430,10 +400,10 @@ df[df['launch_state'] == 'successful'].shape[0] - launch_state.sum() # Check map
 # visualization)
 df.drop(['launch_state'],axis=1,inplace=True)
 
-# Add the new dummy variable launch_state column and move it to column index 1 
+# Add the new dummy variable launch_state column and move it to column index 0 
 # and country to column index 3
 df = pd.concat([launch_state, df], axis=1)
-df = df[['id', 'launch_state', 'category', 'country', 'goal', 'backers_count', 
+df = df[['launch_state', 'id', 'category', 'country', 'goal', 'backers_count', 
          'pledged','deadline', 'created_at', 'launched_at', 'staff_pick', 
          'spotlight']]
 
@@ -499,17 +469,7 @@ df.isnull().sum().sum()
 df.isna().sum().sum()
 
 # ========================================
-# VARIABLE REDUCTION
-# ========================================
-# Variable-variable correlation data 
-df.drop(df.columns[11:], axis=1).drop(columns=['id','launch_state',
-       'launched_at','category','country']).corr()
-
-sns.heatmap(df.drop(df.columns[11:], axis=1).drop(columns=['id', 'launch_state',
-            'launched_at', 'category', 'country']).corr(), cmap='coolwarm', annot=True)
-
-# ========================================
 # SAVE CSV
 # ========================================
-df.to_csv('data/df01.csv', sep=",")
+#df.to_csv('data/df01.csv', sep=",")
 

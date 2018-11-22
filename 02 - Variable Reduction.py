@@ -28,6 +28,7 @@ df.isna().sum().sum()
 # ========================================
 # VARIABLE REDUCTION
 # ========================================
+# Informational variables
 info_variables = ['id','launched_at','category','country']
 
 # ---- ZERO-VARIANCE ----
@@ -97,4 +98,4 @@ corMat_upper.unstack().sort_values(
 # ========================================
 # SAVE CSV
 # ========================================
-df.to_csv('data/df02.csv', sep=",")
+#df.to_csv('data/df02.csv', sep=",")

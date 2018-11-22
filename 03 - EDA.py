@@ -15,9 +15,6 @@ import seaborn as sns
 # ========================================
 # IMPORT DATAFRAME
 # ========================================
-df00 = pd.read_csv('data/df00.csv', sep=',', index_col=0) # Original dirty df
-df00.shape
-
 df = pd.read_csv('data/df02.csv', sep=',', na_filter=False, index_col=0, 
                  parse_dates=['launched_at'])
 
@@ -35,13 +32,8 @@ fig=plt.figure(figsize=(8,4))
 sns.set_style('whitegrid')
 sns.countplot(x='launch_state', data=df, palette='viridis')
 
-successes = df[df['launch_state'] == 1].values.shape[0]
-failures = df[df['launch_state'] == 0].values.shape[0]
-total_projects = df00['id'].unique().shape[0]
-success_rate = successes / total_projects * 100 # 53.2%
-failure_rate = failures / total_projects * 100 # 39.8%
-print('The total success rate is: ', round(success_rate, 1), '%','\n',
-      'The total failure rate is: ', round(failure_rate, 1), '%', sep='')
+# Success rate is proving difficult to calculate due to dirty (especially
+# duplicate data. TBD)
 
 # =============================================================================
 # It looks like a huge portion of projects ultimately fail to launch! We will
@@ -69,7 +61,7 @@ sns.lmplot("goal", "funding_days", data=df, hue='launch_state', size=12,
 
 sns.set_style('whitegrid')
 sns.set(font_scale=3)
-sns.lmplot("goal", "funding_days", data=df, hue='launch_state', size=12,palette='viridis'
+sns.lmplot("goal", "funding_days", data=df, hue='launch_state', size=12,palette='viridis',
            fit_reg=False, scatter_kws={'alpha':0.5, 's':500}).set(xlim=(0,250000))
 
 # =============================================================================
@@ -83,7 +75,6 @@ sns.set_style('whitegrid')
 sns.set(font_scale=3)
 sns.lmplot("goal", "backers_count", data=df, hue='launch_state', size=12,
            fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
-
 
 sns.set_style('whitegrid')
 sns.set(font_scale=3)
@@ -103,12 +94,11 @@ sns.set(font_scale=3)
 sns.lmplot("goal", "pledged_ratio", data=df, hue='launch_state', size=12,
            fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis')
 
-
 sns.set_style('whitegrid')
 sns.set(font_scale=3)
 sns.lmplot("goal", "pledged_ratio", data=df, hue='launch_state', size=12,
-           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
-    xlim=(0,250000), ylim=(0,2))
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, 
+           palette='viridis').set(xlim=(0,250000), ylim=(0,2))
 
 # =============================================================================
 # Observations: As expected, pledged_ratio < 1 means failure and all
@@ -137,8 +127,6 @@ df_staff_picks = df[['launch_state','staff_pick']].groupby(
 df_staff_picks.columns = ['staff_pick','freq']
 df_staff_picks['ratio'] = df[['launch_state','staff_pick']].groupby(
         ['staff_pick'], as_index=False).mean()['launch_state']
-df_staff_picks
-df_staff_picks['freq'] / df_staff_picks['freq'].sum()
 
 plt.figure()
 sns.set_style('whitegrid')
@@ -147,7 +135,7 @@ sns.barplot(data = df[['launch_state','staff_pick']].groupby(
 
 # =============================================================================
 # Observations: 
-#   * 13.4% of projects are chosen as staff picks
+#   * 13.5% of projects are chosen as staff picks
 #   * staff_pick seems to correlate with launch_state:
 #     - 52.3% of projects not chosen as staff picks succeed
 #     - 88.9% of projects chosen as staff picks succeed 
@@ -171,6 +159,7 @@ sns.barplot(data = df[['launch_state','staff_pick']].groupby(
 df_categories = df[['launch_state','category']].groupby(
         ["category"]).describe().reset_index()
 df_categories.sort_values(by=[('launch_state','mean')], ascending=False)
+print(df_categories)
 
 # Frequency plot
 sns.set_style('whitegrid')
@@ -188,9 +177,9 @@ sns.barplot(x='category',y='launch_state',data=df)
 # 0 (failure) and 1 (success)
 plt.figure()
 sns.set_style('whitegrid')
-ax = sns.heatmap(df.pivot_table(values='launch_state', columns='category', 
-                                index='funding_days', fill_value=0.5),
-                xticklabels=True)
+ax = sns.heatmap(
+        df.pivot_table(values='launch_state', columns='category', 
+                       index='funding_days', fill_value=0.5), xticklabels=True)
 ax.invert_yaxis()
 plt.title('Heatmap, launch_state - category vs funding_days')
 
