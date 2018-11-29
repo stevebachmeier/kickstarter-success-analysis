@@ -5,29 +5,29 @@ Created on Tue Nov 27 14:06:31 2018
 @author: steve
 """
 
-# ========================================
+#-----------------------------------------
 # USER INPUT
-# ========================================
+
 file = 'data/Kickstarter_2018-10-18T03_20_48_880Z/Kickstarter_2018-10-18T03_20_48_880Z.json'
 
-# ========================================
+#-----------------------------------------
 # IMPORT LIBRARIES
-# ========================================
+
 import pandas as pd
 from pandas.io.json import json_normalize 
 pd.options.display.max_columns = None # Shows all columns
 import json
 from sklearn.model_selection import train_test_split
 
-# ========================================
+#-----------------------------------------
 # READ IN RAW DATA
-# ========================================
+
 with open(file, encoding="utf8") as json_file:
     json_obj = [json.loads(line) for line in json_file]
     
-# ========================================
+#-----------------------------------------
 # UNPACK RAW DATA
-# ========================================
+
 json_obj2 = []
 # append 'data' dictionary only
 for x in range(0, len(json_obj)):
@@ -85,9 +85,9 @@ df_raw = pd.concat([df_raw_json, df_category, df_creator, df_location,
 df_raw.drop(columns=['category','creator','location','photo',
                      'profile','urls'], inplace=True)
     
-# ========================================
+#-----------------------------------------
 # WORKING/VALIDATION SPLIT
-# ========================================
+
 X, X_v, y, y_v = train_test_split(df_raw.drop(columns=['state']), 
                                   df_raw['state'], test_size=0.2, 
                                   random_state=101)
@@ -95,9 +95,9 @@ X, X_v, y, y_v = train_test_split(df_raw.drop(columns=['state']),
 df00 = pd.concat([y, X], axis=1) # Working set
 df_v = pd.concat([y_v, X_v], axis=1) # Validation set
     
-# ========================================
+#-----------------------------------------
 # WRITE OUT
-# ========================================
+
 #df_raw.to_csv('data/df_raw.csv', sep=",")
 #df_v.to_csv('data/df_v.csv', sep=",")
 #df00.to_csv('data/df00.csv', sep=",")

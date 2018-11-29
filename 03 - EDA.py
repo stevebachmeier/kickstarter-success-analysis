@@ -5,32 +5,33 @@ Created on Thu Nov 15 14:43:36 2018
 @author: steve
 """
 
-# ========================================
+#-----------------------------------------
 # USER INPUTS
-# ========================================
 
 
-# ========================================
+#-----------------------------------------
 # IMPORT LIBRARIES
-# ========================================
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ========================================
+#-----------------------------------------
 # IMPORT DATAFRAME
-# ========================================
+
 df = pd.read_csv('data/df02.csv', sep=',', na_filter=False, index_col=0, 
                  parse_dates=['launched_at'])
 
-df.shape
-df.info()
-df.isnull().sum().sum()
-df.isna().sum().sum()
+# Checks
+if (df.isnull().sum().sum() != 0):
+    print('*** WARNING: Null values introduced with read_csv ***')
+if (df.isna().sum().sum() != 0):
+    print('*** WARNING: NA values introduced with read_csv ***')
+if (df=='').sum().sum() != 0:
+    print('*** WARNING: Empty string (\'\') values introduced with read_csv ***')
 
-# ========================================
+#-----------------------------------------
 # EXPLORATORY DATA ANALYSIS
-# ========================================
 
 # ---- EXPLORE launch_state ----
 fig=plt.figure(figsize=(8,4))
@@ -122,9 +123,7 @@ sns.lmplot("goal", "staff_pick", data=df, hue='launch_state', size=12,
            fit_reg=False, scatter_kws={'alpha':0.1, 's':500},
            palette='viridis').set(xlim=(0,250000))
 
-# =============================================================================
 # Observations: Staff_pick seems to be a decent indicator in launch_state
-# =============================================================================
 
 # ---- EXPLORE STAFF_PICK AND LAUNCH_STATE
 df_staff_picks = df[['launch_state','staff_pick']].groupby(
