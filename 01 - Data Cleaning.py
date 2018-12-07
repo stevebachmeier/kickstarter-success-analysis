@@ -52,12 +52,12 @@ drop_vars = ['photo_1024x576', 'photo_1536x864', 'photo_ed', 'photo_full',
              'profile_show_feature_image', 'profile_state', 
              'profile_state_changed_at', 'profile_text_color', 'currency_symbol',
              'static_usd_rate','converted_pledged_amount','fx_rate',
-             'current_currency','usd_type', 'usd_pledged', 'is_starrable',
-             'friends', 'is_backing', 'is_starred', 'permissions', 'name', 'blurb',
-             'location_state', 'country', 'currency', 'currency_trailing_code', 
+             'current_currency', 'usd_pledged', 'is_starrable', 'friends', 
+             'is_backing', 'is_starred', 'permissions', 'name', 'blurb',
+             'location_state', 'location_country', 'currency', 'currency_trailing_code', 
              'state_changed_at', 'category_parent_id', 'category_position', 
              'category_name', 'category_id', 'creator_is_registered', 
-             'disable_communication', 'created_at']
+             'disable_communication', 'created_at', 'usd_type']
 
 # =============================================================================
 # Many of the variables removed were obviously not useful just by looking at them.
@@ -67,7 +67,7 @@ drop_vars = ['photo_1024x576', 'photo_1536x864', 'photo_ed', 'photo_full',
 # * fx_rate: appears to be exchange rate
 # * usd_pledged: redundant with pledged
 # * location_state: delete (too granular)
-# * country: delete (not sure how it differs from loc_country; largely redundant)
+# * location_country: delete (not sure how it differs from country)
 # * currency: delete (pledges is in usd)
 # * currency_trailing_code - delete (what is it?)
 # * state_changed_at: Seems to be when it changed launch state
@@ -79,12 +79,12 @@ drop_vars = ['photo_1024x576', 'photo_1536x864', 'photo_ed', 'photo_full',
 df.drop(columns=drop_vars, inplace=True)
 
 # Rename columns
-df.rename(columns={'category_slug':'category', 
-                   'location_country':'country', 'state':'launch_state'}, inplace=True)
+df.rename(columns={'category_slug':'category', 'state':'launch_state'}, inplace=True)
 
 # Rearrange columns
 df = df[['launch_state', 'id', 'category', 'goal', 'backers_count', 
-         'pledged', 'country','deadline', 'launched_at', 'staff_pick', 'spotlight']]
+         'pledged', 'country','deadline', 'launched_at', 
+         'staff_pick', 'spotlight']]
 
 # ---- EXTRACT CATEGORIES ----
 # We extract the parent category strings
@@ -117,11 +117,6 @@ if df.isnull().sum().sum() != 0:
     print('*** WARNING: There are null values ***')
 if df.isna().sum().sum() != 0:
     print('*** WARNING: There are NA values ***')
-
-# Replace all empty string values in country with 'US'
-df.replace(r'^\s*$', 'US', regex=True, inplace=True)
-
-# Check
 if (df=='').sum().sum() != 0:
     print('*** WARNING: There are empty string (\'\') values ***')
 
