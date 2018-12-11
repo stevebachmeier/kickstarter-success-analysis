@@ -21,10 +21,17 @@ from datetime import datetime
 #==============================================================================
 def cleanData(df):
     '''
-    This function cleans the raw data for the Kickstarter success projection
-    project. The input dataframe must be imported and the json extracted
-    using '00 - Data Import.py'. 
+    This function cleans downloaded raw data for the Kickstarter success 
+    prediction project. The input dataframe must be imported and the json 
+    extracted using '00 - Data Import.py'. There should be either 95 or 96
+    columns (the 'state' column is optional) and they must be labeled exactly
+    as defined in '00 - Data Import.py'.
     '''
+    
+    #-----------------------------------------
+    # ADD EMPTY STATE COLUMN IF NECESSARY
+    if 'state' not in df.columns:
+        df['state'] = None
     
     #-----------------------------------------
     # COLUMN CLEANUP
@@ -90,9 +97,6 @@ def cleanData(df):
               len(df) - len(df["id"]), 
               ' duplicate IDs ***', sep='')
     
-    # Re-index
-    df.reset_index(drop=True, inplace=True)
-    
     #-----------------------------------------
     # CONVERT DATETIMES
     df['deadline'] = df['deadline'].apply(datetime.utcfromtimestamp)
@@ -110,8 +114,9 @@ def cleanData(df):
     
     #-----------------------------------------
     # CLEAN UP 'launch_state'
-    df.query("launch_state == 'failed' | launch_state == 'successful'", inplace=True)
-    df.reset_index(drop=True, inplace=True)
+    df.query("launch_state == 'failed' | "
+             "launch_state == 'successful' | "
+             "launch_state == None", inplace=True)
     
     #-----------------------------------------
     # CONVERT CATEGORICAL VARIABLES TO DUMMY VARIABLES 
@@ -171,20 +176,24 @@ def cleanData(df):
     # Check
     if (df[df['staff_pick'] == True].shape[0] - staff_pick.sum()) != 0:
         print('*** WARNING: \'staff_pick\' not mapped to 0/1 properly ***')
-    
+        
     d_spotlight = dict(zip([False,True], range(0,2)))
     spotlight = df['spotlight'].map(d_spotlight)
     
     # Check
     if (df[df['spotlight'] == True].shape[0] - spotlight.sum()) != 0:
         print('*** WARNING: \'spotlight\' not mapped to 0/1 properly ***')
-    
+        
     df.drop(['staff_pick','spotlight'],axis=1,inplace=True)
     
     df.insert(loc=df.columns.get_loc("comics"), column='staff_pick', value=staff_pick)
     df.insert(loc=df.columns.get_loc("comics"), column='spotlight', value=spotlight)
     
-    # Checks
+    #-----------------------------------------
+    # VARIABLE REDUCTION
+    df.drop(columns='spotlight', inplace=True)
+    
+    # ---- NULL/NA/EMPTY CHECKS ----
     if (df.isnull().sum().sum() != 0):
         print('*** WARNING: Null values introduced with \'staff_pick\' and \'spotlight\' dummy variables ***')
     if (df.isna().sum().sum() != 0):
@@ -193,7 +202,7 @@ def cleanData(df):
         print('*** WARNING: Empty string (\'\') values introduced with \'staff_pick\' and \'spotlight\' dummy variables ***')
     
     #-----------------------------------------
-    # VARIABLE REDUCTION
-    df.drop(columns='spotlight', inplace=True)
-
+    # WRITE OUT
+    df.to_csv('df_clean.csv', sep=",")
+    
     return df

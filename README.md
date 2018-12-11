@@ -32,3 +32,25 @@ There are two potential goals of this project:
 parameters to predict project launch success.
 
 2. Build a prediction algorithm to try and predict whether future projects will successfully launch. 
+
+## Instructions
+Note that the working files are located in a 'working' directory. These need not be explored except out of interest, debugging, etc.
+
+In order to run the model and make predictions on new Kickstarter data:
+
+1. Ensure that Python is properly installed.
+2. Ensure that the following files are located in the working directly:
+	* classifier_rf_opt.pkl
+	* f_cleanData.py
+	* f_dataImport.py
+	* f_predict.py
+	* predict.py
+	* sc_X.pkl
+3. Create a folder named 'data' in the working directory.
+4. Download or create the Kickstarter data to run the prediction model on.
+	* The data must be in JSON format like from https://webrobots.io/kickstarter-datasets/.
+	* Alternatively, the data can a comma-separated value dataframe from previously-run analyses.
+5. Save the raw data in the 'data' folder.
+6. Open a command prompt.
+7. Type 'python predict.py'
+8. Follow the prompts.

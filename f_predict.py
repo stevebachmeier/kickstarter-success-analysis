@@ -4,7 +4,7 @@ Created on Mon Dec 10 14:25:31 2018
 
 @author: steve
 """
-
+    
 #==============================================================================
 #
 # IMPORT LIBRARIES
@@ -12,7 +12,6 @@ Created on Mon Dec 10 14:25:31 2018
 #==============================================================================
 import dill
 import time
-from sklearn.metrics import confusion_matrix, classification_report
 
 #==============================================================================
 #
@@ -27,7 +26,7 @@ classifier_rf_opt = dill.load(open("classifier_rf_opt.pkl", "rb"))
 # FUNCTION - PREDICT
 #
 #==============================================================================
-def predictLaunchState(df):
+def predictLaunchState(X):
     '''
     This function accepts a new data dataframe and uses a chosen machine 
     learning model to predict whether each observation will be successfully
@@ -39,8 +38,7 @@ def predictLaunchState(df):
     
     info_variables = ['id','launched_at','category','country', 
                       'pledged_ratio', 'backers_count']
-    X = df.drop(columns=info_variables).drop(columns='launch_state')
-    y = df['launch_state']
+    X = X.drop(columns=info_variables)
     
     #-----------------------------------------
     # SCALE FEATURES
@@ -54,27 +52,8 @@ def predictLaunchState(df):
     end_clock = time.clock()
     
     clock_predict = end_clock - start_clock
+    
+    print('\n')
     print('Runtime, predict: ', round(clock_predict, 2), ' sec', sep='')
-    
-    #-----------------------------------------
-    # EVALUATE MODEL
-    
-    # Confusion matrix
-    cm = confusion_matrix(y, y_pred)
-    
-    # Classification report
-    cr = classification_report(y, y_pred)
-    
-    # Accuracy
-    acc = cm.diagonal().sum() / cm.sum()
-    
-    print("\n")
-    print("CONFUSION MATRIX:", sep="")
-    print(cm)
-    print("\n")
-    print("CLASSIFICATION REPORT:", sep="")
-    print(cr)
-    print("\n")
-    print("ACCURACY: ", round(acc, 2), sep="")
     
     return y_pred
