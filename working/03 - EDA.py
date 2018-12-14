@@ -53,7 +53,10 @@ sns.countplot(x='launch_state', data=df, palette='viridis')
 # =============================================================================
 
 # ---- DUMMY VARIABLE PAIRPLOT ----
+sns.set_context("paper", rc={"axes.labelsize":20, 
+                             "xtick.labelsize": 15, "ytick.labelsize": 15})
 sns.set_style('whitegrid')
+plt.figure(figsize=(14,5))
 sns.pairplot(data=df.drop(df.columns[10:], axis=1).drop(
         columns=['id','launched_at','category','country']), 
              diag_kind='kde', hue='launch_state', palette='viridis')
@@ -87,6 +90,12 @@ sns.set(font_scale=3)
 sns.lmplot("goal", "backers_count", data=df, hue='launch_state', size=12,
            fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
     xlim=(0,250000), ylim=(0,15000))
+
+sns.set_style('whitegrid')
+sns.set(font_scale=3)
+sns.lmplot("goal", "backers_count", data=df, hue='launch_state', size=12,
+           fit_reg=False, scatter_kws={'alpha':0.1, 's':500}, palette='viridis').set(
+    xlim=(0,100000), ylim=(0,2000))
 
 # =============================================================================
 # Observations: backers_count is not a good predictor; it's obvious that
@@ -134,8 +143,9 @@ df_staff_picks['ratio'] = df[['launch_state','staff_pick']].groupby(
 
 plt.figure()
 sns.set_style('whitegrid')
-sns.barplot(data = df[['launch_state','staff_pick']].groupby(
+ax = sns.barplot(data = df[['launch_state','staff_pick']].groupby(
         ['staff_pick'], as_index=False).mean(), x='staff_pick', y='launch_state')
+ax.set(xlabel='staff_pick', ylabel='Average launch_state')
 
 # =============================================================================
 # Observations: 
