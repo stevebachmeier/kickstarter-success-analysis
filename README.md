@@ -1,9 +1,7 @@
 # Kickstarter Success Analysis
 
-**Final report:
-* Jupyter notebook: 'Report_Kickstarter.ipynb'
-* PDF: 'Report_Kickstarter.pdf'
-* HTML: 'Report_Kickstarter.html'**
+**Please refer to the analysis report titled 'Report_Kickstarter'. Note that there are three formats available: Jupyter Notebook (.ipynb), 
+PDF (.pdf), and HTML (.html).**
 
 This is a personal project to analyze Kickstarter data to look for possible predictors of project launch success. 
 It is hoped that a predictor algorithm can be put together that to some acceptable accuracy predicts whether future 
