@@ -1,5 +1,10 @@
 # Kickstarter Success Analysis
 
+**Final report:
+* Jupyter notebook: 'Report_Kickstarter.ipynb'
+* PDF: 'Report_Kickstarter.pdf'
+* HTML: 'Report_Kickstarter.html'**
+
 This is a personal project to analyze Kickstarter data to look for possible predictors of project launch success. 
 It is hoped that a predictor algorithm can be put together that to some acceptable accuracy predicts whether future 
 projects will successfully launch or not.
